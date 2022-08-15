@@ -150,7 +150,6 @@ static void end_swap_bio_read(struct bio *bio)
 	}
 
 	SetPageUptodate(page);
-	swap_slot_free_notify(page);
 out:
 	unlock_page(page);
 	WRITE_ONCE(bio->bi_private, NULL);
@@ -395,6 +394,12 @@ int swap_readpage(struct page *page, bool synchronous)
 		if (!ret)
 			count_vm_event(PSWPIN);
 		goto out;
+	}
+
+        ret = bdev_read_page(sis->bdev, swap_page_sector(page), page);
+        if (!ret) {
+                count_vm_event(PSWPIN);
+                goto out;
 	}
 
 	/* Moto huangzq2: Use rw_page for zram page but submit_bio for zram wb page.
